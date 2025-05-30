@@ -65,3 +65,28 @@ variable "flavor_id" {
   description = "인스턴스에 사용할 flavor ID."
   type        = string
 }
+
+# 보안 그룹 관련 변수들
+variable "auto_create_security_groups" {
+  description = "존재하지 않는 보안 그룹을 자동으로 생성할지 여부"
+  type        = bool
+  default     = true
+}
+
+variable "allowed_ssh_cidr" {
+  description = "SSH 접근을 허용할 CIDR 블록"
+  type        = string
+  default     = "0.0.0.0/0"
+}
+
+variable "create_default_sg_rules" {
+  description = "기본 보안 룰을 생성할지 여부"
+  type        = bool
+  default     = true
+}
+
+variable "volume_type" {
+  description = "디스크 볼륨 유형"
+  type        = string
+  default     = ""
+}
