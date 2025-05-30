@@ -7,8 +7,8 @@ subnet_name           = "pri_sub"    # private 네트워크의 서브넷
 external_network_name = "public"     # Floating IP용 외부 네트워크 (public)
 
 # 보안 그룹 설정
-security_group_names         = ["terraform_create_security_group"]
-auto_create_security_groups = true  # 존재하지 않으면 자동 생성
+security_group_names         = ["default"]
+create_new_security_groups = false  # 존재하지 않으면 자동 생성
 allowed_ssh_cidr            = "192.168.1.0/24"  # 특정 네트워크에서만 SSH 허용 (보안 강화)
 create_default_sg_rules     = true  # 기본 룰 생성
 

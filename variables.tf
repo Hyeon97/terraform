@@ -139,7 +139,7 @@ variable "external_network_name" {
 }
 
 # 보안 그룹 관련 누락된 변수들 추가
-variable "auto_create_security_groups" {
+variable "create_new_security_groups" {
   description = "존재하지 않는 보안 그룹을 자동으로 생성할지 여부"
   type        = bool
   default     = true

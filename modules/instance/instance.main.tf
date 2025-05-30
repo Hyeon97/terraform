@@ -50,7 +50,7 @@ module "flavor" {
 module "security_group" {
   source               = "./data/security-groups"
   security_group_names = var.security_group_names
-  auto_create_missing  = var.auto_create_security_groups
+  create_security_groups  = var.create_new_security_groups
   allowed_ssh_cidr     = var.allowed_ssh_cidr
   create_default_rules = var.create_default_sg_rules
   providers = {

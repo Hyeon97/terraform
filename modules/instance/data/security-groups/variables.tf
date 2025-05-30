@@ -16,7 +16,7 @@ variable "security_group_names" {
   }
 }
 
-variable "auto_create_missing" {
+variable "create_security_groups" {
   description = "존재하지 않는 보안 그룹을 자동으로 생성할지 여부"
   type        = bool
   default     = true
