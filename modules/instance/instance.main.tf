@@ -8,9 +8,17 @@ terraform {
 }
 
 # IP 모듈 호출
+# module "floating_ip" {
+#   source        = "./data/vpc/ip"
+#   pool_name     = var.network_name # 외부 네트워크 풀 이름
+#   instance_name = var.instance_name
+#   providers = {
+#     openstack = openstack
+#   }
+# }
 module "floating_ip" {
   source        = "./data/vpc/ip"
-  pool_name     = var.network_name # 외부 네트워크 풀 이름
+  pool_name     = var.external_network_name  # 외부 네트워크 이름 사용
   instance_name = var.instance_name
   providers = {
     openstack = openstack
@@ -48,11 +56,12 @@ module "flavor" {
 #   }
 # }
 module "security_group" {
-  source               = "./data/security-groups"
-  security_group_names = var.security_group_names
+  source                  = "./data/security-groups"
+  security_group_names    = var.security_group_names
   create_security_groups  = var.create_new_security_groups
-  allowed_ssh_cidr     = var.allowed_ssh_cidr
-  create_default_rules = var.create_default_sg_rules
+  allowed_ssh_cidr        = var.allowed_ssh_cidr
+  create_default_rules    = var.create_default_sg_rules
+  project_id             = var.project_id
   providers = {
     openstack = openstack
   }

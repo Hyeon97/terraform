@@ -22,60 +22,35 @@
 # #   "tenant_id" = "451ba464ae8a43d0af140f27085e014e"
 # # }
 
-# 통합된 보안 그룹 정보 출력 (기존 + 새로 생성)
+# 통합된 보안 그룹 정보 출력 (생성된 것 또는 기존 것)
 output "security_group_list" {
-  description = "모든 보안 그룹의 정보 (기존 + 새로 생성)"
-  value = merge(
+  description = "사용할 보안 그룹의 정보"
+  value = var.create_security_groups ? {
     # 새로 생성된 보안 그룹
-    {
-      for name, sg in openstack_networking_secgroup_v2.new_security_groups : name => {
-        id          = sg.id
-        name        = sg.name
-        description = sg.description
-        source      = "created"
-      }
-    },
-    # 기존 보안 그룹
-    {
-      for name, sg in data.openstack_networking_secgroup_v2.existing_security_groups : name => {
-        id          = sg.id
-        name        = sg.name
-        description = sg.description
-        source      = "existing"
-      }
-    }
-  )
-}
-
-# 디버깅용 출력
-output "security_group_check_results" {
-  description = "보안 그룹 존재 여부 확인 결과"
-  value = {
-    for name, result in data.external.check_security_groups : name => {
-      exists = result.result.exists
-      name   = result.result.name
-    }
-  }
-}
-
-# 새로 생성된 보안 그룹만 출력
-output "created_security_groups" {
-  description = "새로 생성된 보안 그룹 정보"
-  value = {
     for name, sg in openstack_networking_secgroup_v2.new_security_groups : name => {
-      id   = sg.id
-      name = sg.name
+      id          = sg.id
+      name        = sg.name
+      description = sg.description
+      source      = "created"
+    }
+  } : {
+    # 기존 보안 그룹
+    for name, sg in data.openstack_networking_secgroup_v2.existing_security_groups : name => {
+      id          = sg.id
+      name        = sg.name
+      description = sg.description
+      source      = "existing"
     }
   }
 }
 
-# 기존 보안 그룹만 출력
-output "existing_security_groups" {
-  description = "기존에 존재하는 보안 그룹 정보"
+# 생성 여부 정보
+output "security_group_creation_info" {
+  description = "보안 그룹 생성 여부와 상태"
   value = {
-    for name, sg in data.openstack_networking_secgroup_v2.existing_security_groups : name => {
-      id   = sg.id
-      name = sg.name
-    }
+    create_mode     = var.create_security_groups
+    group_names     = var.security_group_names
+    created_count   = var.create_security_groups ? length(openstack_networking_secgroup_v2.new_security_groups) : 0
+    existing_count  = !var.create_security_groups ? length(data.openstack_networking_secgroup_v2.existing_security_groups) : 0
   }
 }

@@ -90,3 +90,14 @@ variable "volume_type" {
   type        = string
   default     = ""
 }
+
+variable "external_network_name" {
+  description = "Floating IP를 할당받을 외부 네트워크 이름"
+  type        = string
+  default     = "external"
+}
+
+variable "project_id" {
+  description = "OpenStack 프로젝트 ID (tenant_id)"
+  type        = string
+}

@@ -27,26 +27,9 @@ terraform {
   }
 }
 
-# 1. 외부 명령으로 보안 그룹 존재 여부 확인
-data "external" "check_security_groups" {
-  for_each = toset(var.security_group_names)
-  
-  program = ["bash", "-c", <<-EOT
-    if openstack security group show "${each.key}" >/dev/null 2>&1; then
-      echo '{"exists":"true","name":"${each.key}"}'
-    else
-      echo '{"exists":"false","name":"${each.key}"}'
-    fi
-  EOT
-  ]
-}
-
-# 2. 존재하지 않는 보안 그룹만 생성
+# create_security_groups = true 인 경우: 모든 보안 그룹 생성
 resource "openstack_networking_secgroup_v2" "new_security_groups" {
-  for_each = {
-    for name in var.security_group_names : name => name
-    if data.external.check_security_groups[name].result.exists == "false"
-  }
+  for_each = var.create_security_groups ? toset(var.security_group_names) : toset([])
   
   name        = each.key
   description = "Auto-created security group '${each.key}' by Terraform"
@@ -54,19 +37,17 @@ resource "openstack_networking_secgroup_v2" "new_security_groups" {
   tags = ["terraform-managed", "auto-created"]
 }
 
-# 3. 존재하는 보안 그룹 정보 가져오기
+# create_security_groups = false 인 경우: 기존 보안 그룹 참조 (project_id로 필터링)
 data "openstack_networking_secgroup_v2" "existing_security_groups" {
-  for_each = {
-    for name in var.security_group_names : name => name
-    if data.external.check_security_groups[name].result.exists == "true"
-  }
+  for_each = var.create_security_groups ? toset([]) : toset(var.security_group_names)
   
-  name = each.key
+  name      = each.key
+  tenant_id = var.project_id  # 지정된 프로젝트 ID 사용
 }
 
-# 4. 새로 생성된 보안 그룹에만 SSH 룰 추가
+# 새로 생성된 보안 그룹에만 SSH 룰 추가
 resource "openstack_networking_secgroup_rule_v2" "ssh_ingress" {
-  for_each = var.create_default_rules ? openstack_networking_secgroup_v2.new_security_groups : {}
+  for_each = var.create_security_groups && var.create_default_rules ? openstack_networking_secgroup_v2.new_security_groups : {}
   
   direction         = "ingress"
   ethertype         = "IPv4"
@@ -78,9 +59,9 @@ resource "openstack_networking_secgroup_rule_v2" "ssh_ingress" {
   description       = "SSH access - Terraform managed"
 }
 
-# 5. 새로 생성된 보안 그룹에만 ICMP 룰 추가
+# 새로 생성된 보안 그룹에만 ICMP 룰 추가
 resource "openstack_networking_secgroup_rule_v2" "icmp_ingress" {
-  for_each = var.create_default_rules ? openstack_networking_secgroup_v2.new_security_groups : {}
+  for_each = var.create_security_groups && var.create_default_rules ? openstack_networking_secgroup_v2.new_security_groups : {}
   
   direction         = "ingress"
   ethertype         = "IPv4"

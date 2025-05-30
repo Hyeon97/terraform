@@ -17,7 +17,7 @@ variable "security_group_names" {
 }
 
 variable "create_security_groups" {
-  description = "존재하지 않는 보안 그룹을 자동으로 생성할지 여부"
+  description = "보안 그룹을 생성할지 여부. true: 생성, false: 기존 것 사용"
   type        = bool
   default     = true
 }
@@ -34,7 +34,12 @@ variable "allowed_ssh_cidr" {
 }
 
 variable "create_default_rules" {
-  description = "기본 보안 룰을 생성할지 여부 (SSH, ICMP, egress)"
+  description = "기본 보안 룰을 생성할지 여부 (SSH, ICMP) - 새로 생성되는 보안 그룹에만 적용"
   type        = bool
   default     = true
+}
+
+variable "project_id" {
+  description = "OpenStack 프로젝트 ID (tenant_id)"
+  type        = string
 }

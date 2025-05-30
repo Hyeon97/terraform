@@ -1,6 +1,9 @@
 # OpenStack 인증 정보 파일 경로
 credentials_file_path = "./credentials.json"
 
+# OpenStack 프로젝트 설정
+project_id = "8dcd9ca0b2ba47cf8f7e47e6dd1671d5"
+
 # 네트워크 설정
 network_name          = "private"    # 인스턴스가 연결될 내부 네트워크 (private)
 subnet_name           = "pri_sub"    # private 네트워크의 서브넷

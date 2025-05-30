@@ -167,3 +167,13 @@ variable "volume_type" {
   type        = string
   default     = ""
 }
+
+variable "project_id" {
+  description = "OpenStack 프로젝트 ID (tenant_id)"
+  type        = string
+  
+  validation {
+    condition     = can(regex("^[0-9a-f]{32}$", var.project_id))
+    error_message = "올바른 OpenStack 프로젝트 ID 형식이 아닙니다 (32자리 hex)."
+  }
+}
