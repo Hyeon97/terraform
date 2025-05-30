@@ -168,12 +168,42 @@ variable "volume_type" {
   default     = ""
 }
 
-variable "project_id" {
-  description = "OpenStack 프로젝트 ID (tenant_id)"
+# Keypair 관련 변수 추가
+variable "use_keypair" {
+  description = "SSH keypair 사용 여부"
+  type        = bool
+  default     = false
+}
+
+variable "keypair_name" {
+  description = "생성할 또는 사용할 keypair 이름"
   type        = string
+  default     = ""
+}
+
+variable "public_key_path" {
+  description = "Public key 파일 경로 (keypair 생성 시 필요)"
+  type        = string
+  default     = ""
   
   validation {
-    condition     = can(regex("^[0-9a-f]{32}$", var.project_id))
-    error_message = "올바른 OpenStack 프로젝트 ID 형식이 아닙니다 (32자리 hex)."
+    condition = var.public_key_path == "" || can(file(var.public_key_path))
+    error_message = "지정된 public key 파일이 존재하지 않습니다."
   }
 }
+
+variable "create_new_keypair" {
+  description = "새로운 keypair를 생성할지 여부 (false인 경우 기존 keypair 사용)"
+  type        = bool
+  default     = true
+}
+
+# variable "project_id" {
+#   description = "OpenStack 프로젝트 ID (tenant_id)"
+#   type        = string
+  
+#   validation {
+#     condition     = can(regex("^[0-9a-f]{32}$", var.project_id))
+#     error_message = "올바른 OpenStack 프로젝트 ID 형식이 아닙니다 (32자리 hex)."
+#   }
+# }

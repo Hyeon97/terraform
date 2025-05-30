@@ -8,3 +8,6 @@ root_login.sh
 # dir
 192.168.3.100
 test
+
+# key file
+*.ppk

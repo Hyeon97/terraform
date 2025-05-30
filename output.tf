@@ -1,8 +1,3 @@
-# output "instance_info" {
-#   # sensitive = true
-#   value = module.instance
-# }
-
 output "instance_info" {
   description = "생성된 인스턴스의 상세 정보"
   value = {
@@ -49,5 +44,7 @@ output "resource_summary" {
     additional_volumes = length(var.additional_volumes)
     total_storage_gb   = var.volume_size + sum(var.additional_volumes)
     security_groups    = var.security_group_names
+    project_id         = local.project_id
+    credentials_source = "credentials.json"
   }
 }

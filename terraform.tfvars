@@ -1,9 +1,6 @@
 # OpenStack 인증 정보 파일 경로
 credentials_file_path = "./credentials.json"
 
-# OpenStack 프로젝트 설정
-project_id = "8dcd9ca0b2ba47cf8f7e47e6dd1671d5"
-
 # 네트워크 설정
 network_name          = "private"    # 인스턴스가 연결될 내부 네트워크 (private)
 subnet_name           = "pri_sub"    # private 네트워크의 서브넷
@@ -31,11 +28,10 @@ memory = 512
 region = "RegionOne"
 
 # 사용자 데이터
-user_data_file_path = "./root_login.sh"
+# user_data_file_path = "./root_login.sh"
 
-# 태그 및 메타데이터 (선택사항)
-# tags = {
-#   Environment = "development"
-#   Project     = "terraform-test"
-#   Owner       = "your-name"
-# }
+# Keypair 설정 (SSH 로그인용)
+use_keypair        = true
+keypair_name       = "RIM_Oracle" # create_new_keypair가 false인 경우 사전에 등록되어 있는 key-pair 이름이어야 함
+public_key_path    = ""  # 실제 public key 파일 경로로 변경, create_new_keypair가 false인 경우 ""
+create_new_keypair =  false  # true: 새로 생성, false: 기존 것 사용

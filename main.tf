@@ -1,4 +1,3 @@
-
 module "instance" {
   source                      = "./modules/instance"
   network_name                = var.network_name
@@ -18,7 +17,12 @@ module "instance" {
   user_data_file_path         = var.user_data_file_path
   additional_volumes          = var.additional_volumes
   external_network_name       = var.external_network_name
-  project_id                  = var.project_id
+  project_id                  = local.project_id
+  # Keypair 관련 변수 추가
+  use_keypair                 = var.use_keypair
+  keypair_name                = var.keypair_name
+  public_key_path             = var.public_key_path
+  create_new_keypair          = var.create_new_keypair
   providers = {
     openstack = openstack
   }

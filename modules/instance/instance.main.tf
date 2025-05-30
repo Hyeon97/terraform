@@ -78,6 +78,19 @@ module "volume" {
   }
 }
 
+# keypair 모듈 호출 (사용 시에만)
+module "keypair" {
+  count = var.use_keypair ? 1 : 0
+  
+  source           = "./data/key-pair"
+  keypair_name     = var.keypair_name
+  public_key_path  = var.public_key_path
+  create_keypair   = var.create_new_keypair
+  providers = {
+    openstack = openstack
+  }
+}
+
 # OpenStack VM 생성
 resource "openstack_compute_instance_v2" "instance" {
   depends_on  = [ module.network, module.security_group, module.volume, module.flavor]
@@ -97,6 +110,11 @@ resource "openstack_compute_instance_v2" "instance" {
     destination_type      = "volume"
     delete_on_termination = true
   }
+
+  # keypair 설정 (사용 시에만)
+  key_pair = var.use_keypair ? module.keypair[0].keypair_name : null
+
+  # user-data 설정
   user_data = var.user_data_file_path != "" ? base64encode(file(var.user_data_file_path)) : null
 
    metadata = {

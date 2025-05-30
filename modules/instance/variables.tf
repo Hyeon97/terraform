@@ -101,3 +101,28 @@ variable "project_id" {
   description = "OpenStack 프로젝트 ID (tenant_id)"
   type        = string
 }
+
+# Keypair 관련 변수 추가
+variable "use_keypair" {
+  description = "SSH keypair 사용 여부"
+  type        = bool
+  default     = false
+}
+
+variable "keypair_name" {
+  description = "생성할 또는 사용할 keypair 이름"
+  type        = string
+  default     = ""
+}
+
+variable "public_key_path" {
+  description = "Public key 파일 경로"
+  type        = string
+  default     = ""
+}
+
+variable "create_new_keypair" {
+  description = "새로운 keypair를 생성할지 여부"
+  type        = bool
+  default     = true
+}
