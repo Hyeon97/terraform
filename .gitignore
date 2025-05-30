@@ -1,0 +1,10 @@
+# json file
+credentials.json
+terraform.json
+
+# sh file
+root_login.sh
+
+# dir
+192.168.3.100
+test
