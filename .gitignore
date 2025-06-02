@@ -5,9 +5,17 @@ terraform.json
 # sh file
 root_login.sh
 
-# dir
+# general dir
 192.168.3.100
 test
 
 # key file
 *.ppk
+
+# terraform file
+*.tfstate
+*.backup
+*.tfvars
+
+# terraform dir
+/.terraform
