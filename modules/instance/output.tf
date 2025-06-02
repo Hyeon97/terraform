@@ -66,3 +66,13 @@ output "keypair_info" {
     length(module.keypair) > 0 ? module.keypair[0].keypair_info : null
   ) : null
 }
+
+# Local execution 정보 출력 추가
+output "local_exec_info" {
+  description = "생성된 로컬 파일 및 디렉토리 정보"
+  value = {
+    instance_directory = module.local_exec.instance_directory
+    created_files     = module.local_exec.created_files
+    ssh_command       = module.local_exec.ssh_command
+  }
+}

@@ -121,6 +121,18 @@ resource "openstack_compute_instance_v2" "instance" {
     created_by = "terraform"
     instance_name = var.instance_name
   }
+
+   # 타임아웃 설정
+  timeouts {
+    create = "30m"
+    update = "30m"
+    delete = "30m"
+  }
+  
+  # 강제 삭제 설정
+  force_delete = true
+  stop_before_destroy = true
+
 }
 
 # Floating IP를 인스턴스에 연결
@@ -158,5 +170,28 @@ resource "openstack_compute_volume_attach_v2" "volume_attach" {
   count       = length(var.additional_volumes)
   instance_id = openstack_compute_instance_v2.instance.id
   volume_id   = module.volume.additional_disk_info_list[count.index].id
+}
 
+# local-exec 모듈 호출 (인스턴스 생성 후)
+module "local_exec" {
+  depends_on = [
+    openstack_compute_instance_v2.instance,
+    openstack_networking_floatingip_associate_v2.this,
+    openstack_compute_volume_attach_v2.volume_attach
+  ]
+  
+  source = "./data/local-exec"
+  
+  instance_name      = var.instance_name
+  instance_id        = openstack_compute_instance_v2.instance.id
+  external_ip        = module.floating_ip.floating_ip_info.address
+  internal_ip        = openstack_compute_instance_v2.instance.access_ip_v4
+  flavor_name        = openstack_compute_instance_v2.instance.flavor_name
+  image_uuid         = var.image_uuid
+  security_groups    = openstack_compute_instance_v2.instance.security_groups
+  keypair_name       = var.use_keypair ? module.keypair[0].keypair_name : ""
+  use_keypair        = var.use_keypair
+  network_name       = var.network_name
+  subnet_name        = var.subnet_name
+  additional_volumes = module.volume.additional_disk_info_list
 }
