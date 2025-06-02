@@ -42,7 +42,6 @@ Commands:
     apply     - Terraform apply 실행 (자동 승인)
     destroy   - Terraform destroy 실행 (사용자 확인 후 자동 승인)
     clean     - 생성된 인스턴스 디렉토리 정리
-    reset     - Terraform 상태 완전 초기화 (문제 해결용)
     status    - 현재 상태 및 디렉토리 정보 확인
     help      - 이 도움말 표시
 
@@ -74,7 +73,7 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 # 인수 파싱
 while [[ $# -gt 0 ]]; do
     case $1 in
-        plan|apply|destroy|clean|reset|status|help)
+        plan|apply|destroy|clean|status|help)
             COMMAND="$1"
             shift
             ;;
@@ -479,41 +478,7 @@ terraform_plan() {
     fi
 }
 
-# ERROR 상태 리소스 정리
-cleanup_error_resources() {
-    local instance_name="$1"
-    
-    log_warning "ERROR 상태 리소스 정리 중..."
-    
-    if command -v openstack >/dev/null 2>&1; then
-        # ERROR 상태 인스턴스 찾기
-        local error_instances=$(openstack server list -f value -c ID -c Name --status ERROR | grep "$instance_name" | cut -d' ' -f1)
-        
-        if [[ -n "$error_instances" ]]; then
-            log_warning "ERROR 상태 인스턴스 발견: $error_instances"
-            
-            for instance_id in $error_instances; do
-                log_info "강제 삭제 중: $instance_id"
-                openstack server delete --force "$instance_id" || true
-                
-                # 관련 floating ip 정리
-                local floating_ips=$(openstack floating ip list -f value -c ID --server "$instance_id" 2>/dev/null)
-                for fip_id in $floating_ips; do
-                    log_info "Floating IP 삭제: $fip_id"
-                    openstack floating ip delete "$fip_id" || true
-                done
-            done
-            
-            log_success "ERROR 상태 리소스 정리 완료"
-        else
-            log_info "ERROR 상태 인스턴스가 없습니다."
-        fi
-    else
-        log_warning "OpenStack CLI를 사용할 수 없습니다. 수동으로 정리해주세요."
-    fi
-}
-
-# Terraform Apply 실행 (오류 처리 개선)
+# Terraform Apply 실행
 terraform_apply() {
     local instance_name
     local instance_dir
@@ -611,25 +576,11 @@ terraform_apply() {
         
         # 실패한 로그 파일 위치 안내
         log_error "오류 로그 확인: $apply_log_file"
-        
-        # ERROR 상태 리소스 자동 정리 제안
-        echo ""
-        log_warning "인스턴스 생성에 실패했습니다."
-        read -p "ERROR 상태 리소스를 자동으로 정리하시겠습니까? (y/N): " -n 1 -r
-        echo ""
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            cleanup_error_resources "$instance_name"
-        else
-            log_info "수동으로 정리하려면 다음 명령을 사용하세요:"
-            log_info "openstack server list --status ERROR"
-            log_info "openstack server delete --force <instance-id>"
-        fi
-        
         exit 1
     fi
 }
 
-# Terraform Destroy 실행 (향상된 버전)
+# Terraform Destroy 실행
 terraform_destroy() {
     local instance_name
     local instance_dir
@@ -738,25 +689,6 @@ terraform_destroy() {
         
         # 실패한 로그 파일 위치 안내
         log_error "오류 로그 확인: $destroy_log_file"
-        
-        # Destroy 실패 시 강력한 정리 옵션 제공
-        echo ""
-        log_warning "Terraform Destroy가 실패했습니다."
-        log_warning "강력한 정리 방법을 사용하시겠습니까?"
-        echo ""
-        echo "1. reset 명령 사용 (권장): ./run_terraform.sh reset"
-        echo "2. 수동 정리 후 다시 시도"
-        echo ""
-        read -p "지금 reset을 실행하시겠습니까? (y/N): " -n 1 -r
-        echo ""
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
-            log_info "Reset 실행 중..."
-            reset_terraform_state
-        else
-            log_info "다음 명령으로 수동 정리 후 다시 시도하세요:"
-            log_info "./run_terraform.sh reset"
-        fi
-        
         exit 1
     fi
 }
@@ -847,83 +779,6 @@ show_status() {
             fi
         fi
     done
-}
-
-# Terraform 상태 완전 초기화
-reset_terraform_state() {
-    local instance_name
-    instance_name=$(get_instance_name)
-    
-    log_warning "Terraform 상태 완전 초기화 시작"
-    log_info "대상 인스턴스: $instance_name"
-    
-    echo ""
-    log_warning "다음 작업을 수행합니다:"
-    echo "  1. OpenStack에서 ERROR 상태 리소스 강제 삭제"
-    echo "  2. Terraform 상태 파일 완전 삭제"
-    echo "  3. .terraform 디렉토리 삭제"
-    echo "  4. 인스턴스 디렉토리 삭제"
-    echo ""
-    read -p "정말로 계속하시겠습니까? (y/N): " -n 1 -r
-    echo ""
-    
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        log_info "초기화가 취소되었습니다."
-        return
-    fi
-    
-    # 1. OpenStack 리소스 강제 정리
-    if command -v openstack >/dev/null 2>&1; then
-        log_info "OpenStack 리소스 정리 중..."
-        
-        # ERROR 상태 인스턴스 찾기 및 삭제
-        local error_instances=$(openstack server list -f value -c ID -c Name --status ERROR 2>/dev/null | grep "$instance_name" | cut -d' ' -f1)
-        for instance_id in $error_instances; do
-            log_info "ERROR 인스턴스 강제 삭제: $instance_id"
-            openstack server delete --force "$instance_id" 2>/dev/null || true
-        done
-        
-        # 해당 인스턴스명의 모든 floating IP 정리
-        local floating_ips=$(openstack floating ip list -f value -c ID -c Description 2>/dev/null | grep "$instance_name" | cut -d' ' -f1)
-        for fip_id in $floating_ips; do
-            log_info "Floating IP 삭제: $fip_id"
-            openstack floating ip delete "$fip_id" 2>/dev/null || true
-        done
-        
-        # 해당 인스턴스명의 볼륨 정리
-        local volumes=$(openstack volume list -f value -c ID -c Name 2>/dev/null | grep "$instance_name" | cut -d' ' -f1)
-        for vol_id in $volumes; do
-            log_info "볼륨 삭제: $vol_id"
-            openstack volume delete "$vol_id" 2>/dev/null || true
-        done
-        
-        log_success "OpenStack 리소스 정리 완료"
-    else
-        log_warning "OpenStack CLI를 사용할 수 없습니다. 수동으로 정리해주세요."
-    fi
-    
-    # 2. 현재 디렉토리의 Terraform 파일들 삭제
-    log_info "현재 디렉토리 Terraform 파일 정리 중..."
-    rm -f terraform.tfstate* 2>/dev/null || true
-    rm -rf .terraform/ 2>/dev/null || true
-    rm -f backend.tf 2>/dev/null || true
-    
-    # 3. 인스턴스 디렉토리 삭제
-    if [[ -d "$instance_name" ]]; then
-        log_info "인스턴스 디렉토리 삭제: $instance_name/"
-        rm -rf "$instance_name/"
-    fi
-    
-    # 4. 잠시 대기 (OpenStack 리소스 정리 시간)
-    log_info "리소스 정리 완료 대기 중..."
-    sleep 5
-    
-    # 5. 확인
-    echo ""
-    log_success "Terraform 상태 초기화 완료!"
-    log_info "이제 새롭게 시작할 수 있습니다:"
-    log_info "  ./run_terraform.sh plan"
-    log_info "  ./run_terraform.sh apply"
     
     echo ""
 }
@@ -945,9 +800,6 @@ main() {
             ;;
         clean)
             clean_directories
-            ;;
-        reset)
-            reset_terraform_state
             ;;
         plan)
             validate_files
